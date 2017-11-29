@@ -3,7 +3,7 @@
 #
 # Extending classes are required to implement
 # the following methods:
-# * request_authorization_from_user
+# * request_authorization_from_user 
 # * fetch_contatcs
 module OmniContacts
   module Middleware
@@ -22,9 +22,9 @@ module OmniContacts
       end
 
       # Rack callback. It handles three cases:
-      # * user visit middleware entry point.
+      # * user visit middleware entry point. 
       #   In this case request_authorization_from_user is called
-      # * user is redirected back to the application
+      # * user is redirected back to the application 
       #   from the authorization site. In this case the list
       #   of contacts is fetched and stored in the variables
       #   omnicontacts.contacts within the Rack env variable.
@@ -34,10 +34,8 @@ module OmniContacts
       def call env
         @env = env
         if env["PATH_INFO"] =~ /^#{@listening_path}\/?$/
-          session['omnicontacts.params'] = Rack::Request.new(env).params
           handle_initial_request
         elsif env["PATH_INFO"] =~ /^#{redirect_path}/
-          env['omnicontacts.params'] = session.delete('omnicontacts.params')
           handle_callback
         else
           @app.call(env)
@@ -45,7 +43,7 @@ module OmniContacts
       end
 
       private
-
+      
       def test_mode?
         IntegrationTest.instance.enabled
       end
@@ -67,7 +65,6 @@ module OmniContacts
           else
             fetch_contacts
           end
-          set_current_user IntegrationTest.instance.mock_fetch_user(self) if test_mode?
           @app.call(@env)
         end
       end
@@ -77,7 +74,7 @@ module OmniContacts
       end
 
       #  This method rescues executes a block of code and
-      #  rescue all exceptions. In case of an exception the
+      #  rescue all exceptions. In case of an exception the 
       #  user is redirected to the failure endpoint.
       def execute_and_rescue_exceptions
         yield
@@ -92,8 +89,7 @@ module OmniContacts
       def handle_error error_type, exception
         logger.puts("Error #{error_type} while processing #{@env["PATH_INFO"]}: #{exception.message}") if logger
         failure_url = "#{ MOUNT_PATH }failure?error_message=#{error_type}&importer=#{class_name}"
-        params_url = append_request_params(failure_url)
-        target_url = append_state_query(params_url)
+        target_url = append_state_query(failure_url)
         [302, {"Content-Type" => "text/html", "location" => target_url}, []]
       end
 
@@ -110,17 +106,9 @@ module OmniContacts
         "omnicontacts." + class_name
       end
 
-      def append_request_params(target_url)
-        return target_url unless @env['omnicontacts.params']
-        params = Rack::Utils.build_query(@env['omnicontacts.params'])
-        unless params.nil? or params.empty?
-          target_url = target_url + (target_url.include?("?")?"&":"?") + params
-        end
-        return target_url
-      end
-
       def append_state_query(target_url)
         state = Rack::Utils.parse_query(@env['QUERY_STRING'])['state']
+
         unless state.nil?
           target_url = target_url + (target_url.include?("?")?"&":"?") + 'state=' + state
         end
